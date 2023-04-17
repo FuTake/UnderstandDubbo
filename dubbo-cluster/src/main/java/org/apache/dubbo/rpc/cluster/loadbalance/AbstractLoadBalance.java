@@ -44,6 +44,8 @@ public abstract class AbstractLoadBalance implements LoadBalance {
      * @param warmup the warmup time in milliseconds
      * @param weight the weight of an invoker
      * @return weight which takes warmup into account
+     *
+     * https://mp.weixin.qq.com/s/NDffNGydALLqvXOSok1-CQ
      */
     static int calculateWarmupWeight(int uptime, int warmup, int weight) {
         int ww = (int) (Math.round(Math.pow((uptime / (double) warmup), 2) * weight));
@@ -86,12 +88,20 @@ public abstract class AbstractLoadBalance implements LoadBalance {
             if (weight > 0) {
                 long timestamp = invoker.getUrl().getParameter(TIMESTAMP_KEY, 0L);
                 if (timestamp > 0L) {
+                    // 服务启动时间 ms
                     long uptime = System.currentTimeMillis() - timestamp;
                     if (uptime < 0) {
                         return 1;
                     }
                     int warmup = invoker.getUrl().getParameter(WARMUP_KEY, DEFAULT_WARMUP);
                     if (uptime > 0 && uptime < warmup) {
+                        /**
+                         * 20230417
+                         * 当前服务的权重
+                         * 从服务启动开始，每隔 6 秒权重就会加一，直到 600 秒，即 10 分钟之后，权重变为 100。
+                         * 这是为了给刚启动的服务足够的时间预热，让流量逐渐的增加
+                         */
+
                         weight = calculateWarmupWeight((int)uptime, warmup, weight);
                     }
                 }

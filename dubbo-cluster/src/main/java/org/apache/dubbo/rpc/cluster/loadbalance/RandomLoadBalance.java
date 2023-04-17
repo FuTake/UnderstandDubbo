@@ -42,6 +42,7 @@ public class RandomLoadBalance extends AbstractLoadBalance {
      * @param invocation Invocation
      * @param <T>
      * @return The selected invoker
+     * 20230417
      */
     @Override
     protected <T> Invoker<T> doSelect(List<Invoker<T>> invokers, URL url, Invocation invocation) {
@@ -53,6 +54,13 @@ public class RandomLoadBalance extends AbstractLoadBalance {
         int[] weights = new int[length];
         // The sum of weights
         int totalWeight = 0;
+
+        /*
+            20230417 - 计算服务端所有服务的权重总和
+            length就是服务端的数量
+            weights数组统计，各个服务端的权重区间 eg：weights[0] = 100 weights[1] = 200 weights[2] = 300
+            0， 1， 2代表对应服务端的编号
+         */
         for (int i = 0; i < length; i++) {
             int weight = getWeight(invokers.get(i), invocation);
             // Sum
@@ -65,6 +73,10 @@ public class RandomLoadBalance extends AbstractLoadBalance {
         }
         if (totalWeight > 0 && !sameWeight) {
             // If (not every invoker has the same weight & at least one invoker's weight>0), select randomly based on totalWeight.
+            /*
+                20230417
+                random一个数值，然后判读落在weights的哪个下标里，就代表请求要发送给哪个下标的服务
+             */
             int offset = ThreadLocalRandom.current().nextInt(totalWeight);
             // Return a invoker based on the random value.
             for (int i = 0; i < length; i++) {
